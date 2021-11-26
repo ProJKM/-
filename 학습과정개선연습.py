@@ -56,7 +56,7 @@ x_test, y_test=train_generator.next()
 ################ 모델 구축 및 학습 ################
 
 # 학습 모델
-model = Sequential() 
+model = Sequential()
 # 컨볼루션 레이어, 컨볼루션층, 32개의 필터, 커널사이즈는 (3, 3), 픽셀은 그대로, 활성화 함수는 relu
 model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(224, 224,3))) 
 # 풀링층, 방식은 맥스풀링
@@ -65,7 +65,7 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Conv2D(64, (3, 3), activation='relu')) 
 model.add(MaxPooling2D(pool_size=(2, 2)))
 # Flatten, 모델 안에서의 reshape, 한줄로 변형
-model.add(Flatten) 
+model.add(Flatten()) 
 # 결과, 활성화 함수는 softtmax
 model.add(Dense(2, activation='softmax'))
 # 모델구조 확인
@@ -75,7 +75,7 @@ model.summary()
 # optimizer는 역전파 진행시 최적화 방식
 # loss는 손실함수, 데이터를 검증하는 방식
 # metrics의 경우 분류문제이기 때문에 accuracy
-model.compile(optimizer='adadelta', loss='categorical_crossent ropy', metrics=['accuracy']) 
+model.compile(optimizer='adadelta', loss='categorical_crossentropy', metrics=['accuracy']) 
 # epochs = 반복 횟수
 epochs = 10 
 # batch_size = 가중치를 갱신할 데이터의 양
@@ -85,8 +85,11 @@ batch_size=100
 early_stopping = EarlyStopping(monitor='loss', patience=3) 
 # 모델 학습
 # verbose = 학습 진행도 노출설정, validation_data = 검증데이터셋, callbacks = epoch마다 사용되는 검증데이터 수
-model,fit(x_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(x_test, y_test)
-,callbacks=[early_stopping])
+history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(x_test, y_test), callbacks=[early_stopping])
+# 결과 시각화를 위한 함수화
+op=[]
+# 나열
+op.append(history)
 
 ################ 결과 ################
 
@@ -96,3 +99,17 @@ score = model.evaluate(x_test, y_test, verbose=0)
 # 출력
 print('Test loss:', score[0]) 
 print('Test accuracy:', score[1])
+
+# 시각화
+# loos를 가져옴, 훈련셋
+plt.plot(op[0].history['loss'])
+# val_loos를 가져옴, 검증셋
+plt.plot(op[0].history['val_loss'])
+# 제목
+plt.title('{}'.format(optimizers[0]))
+# y축
+plt.ylabel('loss')
+# x축
+plt.xlabel('epoch')
+# 범례추가, loc = location 범례 위치
+plt.legend(['train', 'val'], loc='upper left')
