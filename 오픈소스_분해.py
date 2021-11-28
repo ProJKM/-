@@ -7,9 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1egI6ZJu7wmJV55eMYW2RQHFn0yzKuHML
 """
 
-!pip install tensorflow==1.14.0
-
-!pip install keras==2.3.1
+################ 라이브러리 로딩 ################
 
 import sys
 import tensorflow as tf
@@ -19,73 +17,120 @@ from keras.layers import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 import numpy as np
 from matplotlib import pyplot as plt
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 
+################ 데이터 셋 전처리 ################
+
+# 이미지 가로, 세로 길이 함수화
 img_rows = 28
 img_cols = 28
 
+# 데이터셋 임포트
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
+# 모델과 맞도록 차원 추가
 input_shape = (img_rows, img_cols, 1)
+
+# 모델에 맞는 형태로 reshape
+# 훈련셋과 시험셋의 분리
 x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
 x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
 
+# 픽셀 정규화
+# 이후 연산을 위한, 0~1사이의 값으로 나타내기위해 255로 나눔 
+# astype의 경우 255로 나누기위해 데이터타입을 float32로 바꾼것
 x_train = x_train.astype('float32') / 255.
 x_test = x_test.astype('float32') / 255.
 
-# x_train= x_train[0:30000]
-# x_test= x_test[0:5000]
-# y_train= y_train[0:30000]
-# y_test= y_test[0:5000]
-
+# 값 출력
 print('x_train shape:', x_train.shape)
 print(x_train.shape[0], 'x_train samples')
 print(x_test.shape[0], 'x_test samples')
 print(y_train.shape, 'y_train samples')
 print(y_test.shape, 'y_test samples')
 
-
+# 예측될 데이터의 갯수
+# minst 0~9 까지 10개
 num_classes=10
 
+# 원핫인코딩
+# 범주형 종속변수의 수식화
 y_train = to_categorical(y_train, num_classes)
 y_test = to_categorical(y_test, num_classes)
 
+################ 모델 구축 및 학습 ################
 
-
-
+# 사용할 optimizer 함수화
+# optimizer는 역전파 진행시 최적화 방식
+# https://keras.io/ko/optimizers/
 optimizers = [
     'Adadelta',
     'Adam',
     'RMSprop',
-    'SGD'
+    'SGD' 
 ]
 
+# 결과 시각화를 위한 함수화
 op=[]
+
+# optimizer 순차 실행
 for optimizer in optimizers:
+  # 학습 모델
   model = Sequential()
+  # 컨볼루션층, 32개의 필터, 커널사이즈는 (3, 3), 픽셀은 그대로, 활성화 함수는 relu
   model.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation='relu', input_shape=input_shape))
+  # 풀링층, 방식은 맥스풀링
   model.add(MaxPooling2D(pool_size=(2, 2)))
+  # 컨볼루션 레이어 한번더, 필터는 64개
   model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+  # 풀링층, 방식은 맥스풀링
   model.add(MaxPooling2D(pool_size=(2, 2)))
+  # 드랍아웃, 과적합 방지
   model.add(Dropout(0.25))
+  # Flatten, 모델 안에서의 reshape, 한줄로 변형
   model.add(Flatten())
+  # FC, 히든레이어, 활성화 함수는 relu
   model.add(Dense(50, activation='relu'))
+  # 드랍아웃, 과적합 방지
   model.add(Dropout(0.25))
+  # 결과, 활성화 함수는 softtmax
   model.add(Dense(num_classes, activation='softmax'))
   
+  # 3번 연속으로 loss값이 하락하지 않을경우 중단, 과적합 방지
   early_stopping = EarlyStopping(monitor='loss',patience=3)
+
+  # 모델 컴파일, loss, optimizer, metrics를 설정 
+  # loss는 손실함수, 데이터를 검증하는 방식
+  # optimizer는 역전파 진행시 최적화 방식, 해당코드에선 4개 실행
+  # metrics의 경우 분류문제이기 때문에 accuracy
   model.compile(loss='categorical_crossentropy', optimizer= optimizer, metrics=['accuracy'])
+  
+  # 모델 학습, 결과 시각화를 위한 함수화
+  # batch_size = 가중치를 갱신할 데이터의 양, epochs = 반복 횟수, verbose = 학습 진행도 노출설정, 
+  # validation_data = 검증데이터셋, callbacks = epoch마다 사용되는 검증데이터 수
   history = model.fit(x_train, y_train, batch_size=32, epochs=10, verbose=1, validation_data=(x_test, y_test),callbacks=[early_stopping])
+  # 결과 시각화를 위한 나열
   op.append(history)
 
+################ 'Adadelta' ################
+
+# 'Adadelta'의 loos를 가져옴, 훈련셋
 plt.plot(op[0].history['loss'])
+# 'Adadelta'의 val_loos를 가져옴, 검증셋
 plt.plot(op[0].history['val_loss'])
+# 제목
 plt.title('{}'.format(optimizers[0]))
+# y축
 plt.ylabel('loss')
+# x축
 plt.xlabel('epoch')
+# 범례추가, loc = location 범례 위치
 plt.legend(['train', 'val'], loc='upper left')
 
+################ 'Adam' ################
+
+# 위와 동일
 plt.plot(op[1].history['loss'])
 plt.plot(op[1].history['val_loss'])
 plt.title('{}'.format(optimizers[1]))
@@ -93,6 +138,9 @@ plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 
+################ 'RMSprop' ################
+
+# 위와 동일
 plt.plot(op[2].history['loss'])
 plt.plot(op[2].history['val_loss'])
 plt.title('{}'.format(optimizers[2]))
@@ -101,6 +149,9 @@ plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.figure(figsize=(4,4))
 
+################ 'SGD' ################
+
+# 위와 동일
 plt.plot(op[3].history['loss'])
 plt.plot(op[3].history['val_loss'])
 plt.title('{}'.format(optimizers[3]))
@@ -108,3 +159,10 @@ plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.figure(figsize=(4,4))
+
+################ 그래프 해석 ################
+
+# 기본적으로 넷 모두 검증집합의 loss값이 훈련집합의 loss값보다 낮음, 표본부족? Dropout의 영향? 
+# 'Adadelta'의 경우 EarlyStopping 없이, 계속해서 loss가 줄고 있고 아직 loss값이 크기 때문에 epoch값을 늘릴필요성이 있음
+# 나머지 셋의 경우 비슷하나 두 데이터가 가장 근접하고 작은 값을 가졌던 'Adam'이 제일 좋은 모델로 보임
+# 추가적으로, 제일 EarlyStopping가 빨랏던건 'RMSprop'
