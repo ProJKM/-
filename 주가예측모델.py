@@ -3,9 +3,11 @@ import pandas as pd # data processing, CSV file 1/0 (2.g. pd,read_csv)
 import matplotlib.pyplot as plt 
 import seaborn as sns 
 from google.colab import drive 
+# g드라이브 연결
 drive.mount('/content/drive') 
+# 데이터 로드
 stocks = pd.read_csv('/content/drive/MyDrive/01-삼성전자-주가.csv', encoding='utf-8') 
-stocks 
+# 
 stocks['일자']=pd.to_datetime(stocks['일자'], format='%Y%m%d') 
 stocks['연도']=stocks['일자'].dt.year 
 df = stocks.loc[stocks['일자']>="1990"] 
@@ -13,6 +15,7 @@ plt.figure(figsize=(16, 9))
 sns.lineplot(y=df['거래량'], x=df['일자']) 
 plt.xlabel('time') 
 plt.ylabel('mount') 
+
 from sklearn.preprocessing import MinMaxScaler 
 df.sort_index(ascending=False).reset_index(drop=True) 
 scaler = MinMaxScaler() 
