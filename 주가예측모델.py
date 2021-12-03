@@ -3,17 +3,24 @@ import pandas as pd # data processing, CSV file 1/0 (2.g. pd,read_csv)
 import matplotlib.pyplot as plt 
 import seaborn as sns 
 from google.colab import drive 
+
 # g드라이브 연결
 drive.mount('/content/drive') 
 # 데이터 로드
 stocks = pd.read_csv('/content/drive/MyDrive/01-삼성전자-주가.csv', encoding='utf-8') 
-# 
+# date컬럼은 자료형이 object이다. 이 문자열 날짜를 datetime 자료형으로 변환
 stocks['일자']=pd.to_datetime(stocks['일자'], format='%Y%m%d') 
+# 연도 인덱싱
 stocks['연도']=stocks['일자'].dt.year 
+# 1990년도 이후 자료 인덱싱
 df = stocks.loc[stocks['일자']>="1990"] 
+# 가로16 세로9의 figure 생성
 plt.figure(figsize=(16, 9)) 
+# x축에 일자 y축에 거래량을 넣고 그래프로 출력
 sns.lineplot(y=df['거래량'], x=df['일자']) 
+# x축 'time' 라벨출력
 plt.xlabel('time') 
+# y축 'mount' 라벨출력
 plt.ylabel('mount') 
 
 from sklearn.preprocessing import MinMaxScaler 
