@@ -1,8 +1,12 @@
+################ 라이브러리 임포트 ################
+
 import numpy as np # linear algebra 
 import pandas as pd # data processing, CSV file 1/0 (2.g. pd,read_csv) 
 import matplotlib.pyplot as plt 
 import seaborn as sns 
 from google.colab import drive 
+
+################ 데이터 전처리 ################
 
 # g드라이브 연결
 drive.mount('/content/drive') 
@@ -14,6 +18,9 @@ stocks['일자']=pd.to_datetime(stocks['일자'], format='%Y%m%d')
 stocks['연도']=stocks['일자'].dt.year 
 # 1990년도 이후 자료 인덱싱
 df = stocks.loc[stocks['일자']>="1990"] 
+
+################ 시각화 ################
+
 # 가로16 세로9의 figure 생성
 plt.figure(figsize=(16, 9)) 
 # x축에 일자 y축에 거래량을 넣고 그래프로 출력
@@ -23,21 +30,27 @@ plt.xlabel('time')
 # y축 'mount' 라벨출력
 plt.ylabel('mount') 
 
+################ 데이터 정규화 ################
+
 from sklearn.preprocessing import MinMaxScaler 
 # 내림차순으로 데이터 정렬, 기존 행 인덱스 제거후 초기화
 df.sort_index(ascending=False).reset_index(drop=True)
 # MinMaxScaler 클래스의 인스턴스
 scaler = MinMaxScaler() 
-
 scale_cols = ['시가', '고가', '저가', '종가', '거래량'] 
 df_scaled = scaler.fit_transform(df [scale_cols]) 
 df_scaled = pd. DataFrame(df_scaled) 
 df_scaled.columns = scale_cols 
 df_scaled 
+
+################ 시계열 데이터셋 분리 ################ 
+
 TEST_SIZE = 200 
 WINDOW_SIZE = 20 
 train = df_scaled[:-TEST_SIZE] 
 test = df_scaled [-TEST_SIZE:] 
+
+
 def make_dataset (data, label, window_size=20):
   feature_list = [] 
   label_list = [] 
@@ -58,6 +71,8 @@ test_label = test [label_cols]
 test_feature.shape, test_label.shape 
 test_feature, test_label = make_dataset (test_feature, test_label, 20) 
 test_feature. shape, test_label.shape
+
+################ 모델 학습 ################ 
 
 from keras.models import Sequential 
 from keras.layers import Dense 
