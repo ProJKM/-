@@ -24,8 +24,11 @@ plt.xlabel('time')
 plt.ylabel('mount') 
 
 from sklearn.preprocessing import MinMaxScaler 
-df.sort_index(ascending=False).reset_index(drop=True) 
+# 내림차순으로 데이터 정렬, 기존 행 인덱스 제거후 초기화
+df.sort_index(ascending=False).reset_index(drop=True)
+# MinMaxScaler 클래스의 인스턴스
 scaler = MinMaxScaler() 
+
 scale_cols = ['시가', '고가', '저가', '종가', '거래량'] 
 df_scaled = scaler.fit_transform(df [scale_cols]) 
 df_scaled = pd. DataFrame(df_scaled) 
