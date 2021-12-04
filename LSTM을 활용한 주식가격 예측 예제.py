@@ -35,28 +35,40 @@ plt.ylabel('mount')
 from sklearn.preprocessing import MinMaxScaler 
 # 내림차순으로 데이터 정렬, 기존 행 인덱스 제거후 초기화
 df.sort_index(ascending=False).reset_index(drop=True)
-# MinMaxScaler 클래스의 인스턴스
+# MinMaxScaler 클래스의 인스턴스, 모든 feature가 0과 1사이에 위치하게 만든다.
 scaler = MinMaxScaler() 
+# 인자 선언
 scale_cols = ['시가', '고가', '저가', '종가', '거래량'] 
+# df안의 scale_cols를 MinMaxScaler
 df_scaled = scaler.fit_transform(df [scale_cols]) 
+# MinMaxScaler된 값을 다시 df_scaled로 선언
 df_scaled = pd. DataFrame(df_scaled) 
+# df_scaled의 열을 scale_cols로 선언
 df_scaled.columns = scale_cols 
-df_scaled 
 
 ################ 시계열 데이터셋 분리 ################ 
 
+# TEST_SIZE 선언, 과거 200일 기반으로 학습
 TEST_SIZE = 200 
+# WINDOW_SIZE 선언, 과거 20일을 기반으로 예측
 WINDOW_SIZE = 20 
+# 최근 200일 제외한 과거데이터로 훈련셋 선언
 train = df_scaled[:-TEST_SIZE] 
+# 최근 200일 데이터로 검증셋 선언
 test = df_scaled [-TEST_SIZE:] 
-
-
+# make_dataset 함수 선언
 def make_dataset (data, label, window_size=20):
+  # feature_list 선언
   feature_list = [] 
+  # label_list 선언
   label_list = [] 
+  # data에서 window_size를 뺀 값 만큼 반복작업
   for i in range(len(data) - window_size):
+    # i ~ i+window_size 까지 값을 feature_list에 선언
     feature_list.append(np.array(data.iloc[i:i+window_size]))
+    # i+window_size 행의 값을 label_list에 선언
     label_list.append(np.array(label.iloc[i+window_size]))
+  # 위에서 나열한 값들을 배열로 변환해 feature_list, label_list 반환
   return np.array(feature_list), np.array(label_list) 
 from sklearn.model_selection import train_test_split 
 feature_cols = ['시가', '고가', '저가', '종가', '거래량'] 
