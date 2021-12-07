@@ -1,16 +1,18 @@
 ################ 라이브러리 임포트 ################
 
 import os 
-import numpy as np # linear algebra 
-import pandas as pd # data processing, CSV file 1/0 (2.g. pd,read_csv) 
+import numpy as np 
+import pandas as pd 
 import matplotlib.pyplot as plt 
 import seaborn as sns 
+import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler 
 from sklearn.model_selection import train_test_split 
-from keras.models import Sequential 
-from keras.layers import Dense 
-from keras.callbacks import EarlyStopping, ModelCheckpoint 
 from keras.layers import LSTM 
+from keras.layers import Dense 
+from keras.layers import Activation
+from keras.models import Sequential 
+from keras.callbacks import EarlyStopping, ModelCheckpoint 
 from google.colab import drive 
 
 ################ 데이터 전처리 ################
@@ -25,17 +27,6 @@ stocks['일자']=pd.to_datetime(stocks['일자'], format='%Y%m%d')
 stocks['연도']=stocks['일자'].dt.year 
 # 1990년도 이후 자료 인덱싱
 df = stocks.loc[stocks['일자']>="1990"] 
-
-################ 시각화 ################
-
-# 가로16 세로9의 figure 생성
-plt.figure(figsize=(16, 9)) 
-# x축에 일자 y축에 거래량을 넣고 그래프로 출력
-sns.lineplot(y=df['거래량'], x=df['일자']) 
-# x축 'time' 라벨출력
-plt.xlabel('time') 
-# y축 'mount' 라벨출력
-plt.ylabel('mount') 
 
 ################ 데이터 정규화 ################
 
@@ -110,31 +101,43 @@ test_feature, test_label = make_dataset (test_feature, test_label, 20)
 
 # 모델 시작
 model = Sequential() 
-# LSTM모델
-model.add(LSTM(32,
+# LSTM, 64유닛, 활성화함수'tanh', 한층더 쌓기위해 return_sequences=True
+model.add(LSTM(64,
                input_shape=(train_feature. shape[1], train_feature.shape[2]), 
-               activation='softmax', 
-               return_sequences=False)
-)
+               activation='tanh',
+               return_sequences=True))
+# LSTM, 32유닛, return_sequences=False
+model.add(LSTM(32,return_sequences=False))
+# Dense 레이어
 model.add(Dense(1))
-# 모델 컴파일
-model.compile(loss='mean_squared_error', optimizer='RMSprop')
-# early_stop
-early_stop = EarlyStopping(monitor='loss', patience=1) 
-# 모델 학습
-history = model.fit(x_train, y_train,
-                    epochs=30, 
-                    batch_size=16, 
-                    validation_data=(x_valid, y_valid),
-                    callbacks=[early_stop]) 
+# 모델 출력
+model.summary()
+# 모델 컴파일, 회RNL loss='mse', 최적화 optimizer='Adam'
+model.compile(loss='mse', optimizer='Adam')
+# early_stop, 3번 연속으로 loss값이 하락하지 않을경우 중단, 과적합 방지
+early_stop = EarlyStopping(monitor='loss', patience=3) 
+# 모델 학습, epochs = 200회 반복 , batch_size = epoch마다 사용되는 검증데이터 수, validation_data = 검증데이터셋, callbacks = early_stop 적용
+model.fit(x_train, y_train,
+          epochs=200, 
+          batch_size=4, 
+          validation_data=(x_valid, y_valid),
+          callbacks=[early_stop]) 
+
 # 검증셋으로 예측
 pred = model.predict(test_feature) 
 
 ################ 시각화 ################ 
 
+# 가로12 세로9의 figure 생성
 plt.figure(figsize=(12, 9)) 
+# test_label 출력 ,라벨은 'actual'
 plt.plot(test_label, label = 'actual') 
+# pred 출력 ,라벨은 'prediction'
 plt.plot(pred, label = 'prediction') 
+# 범례 출력
 plt.legend() 
-plt.show() 
-score = model. evaluate(x_valid, y_valid, verbose=1)
+
+# 학습 평가
+score = model. evaluate(x_valid, y_valid, verbose=0)
+# loss 값만 출력
+print('loss:', score) 
